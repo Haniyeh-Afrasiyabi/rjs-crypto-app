@@ -32,7 +32,7 @@ function HomePage() {
       <Search currency={currency} setCurrency={setCurrency} />
       <TableCoin coins={coins} isLoading={isLoading} setChart={setChart} />
       <Pagination page={page} setPage={setPage} />
-      {!!chart && <Chart setChart={setChart} />}
+      {!!chart && <Chart chart={chart} setChart={setChart} />}
     </div>
   );
 }
