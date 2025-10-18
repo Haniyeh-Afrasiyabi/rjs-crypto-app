@@ -1,9 +1,10 @@
+import { marketChart, getCoinDetail } from "../../services/cryptoApi";
 import { useEffect, useState } from "react";
 import { RotatingLines } from "react-loader-spinner";
 import { searchCoin } from "../../services/cryptoApi";
 import styles from "./Search.module.css";
 
-function Search({ currency, setCurrency }) {
+function Search({ currency, setCurrency, setChart }) {
   const [text, setText] = useState("");
   const [coins, setCoins] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -65,10 +66,7 @@ function Search({ currency, setCurrency }) {
           )}
           <ul>
             {coins.map((coin) => (
-              <li key={coin.id}>
-                <img src={coin.thumb} alt={coin.name} />
-                <p>{coin.name}</p>
-              </li>
+              <SearchResult coin={coin} key={coin.id} setChart={setChart} />
             ))}
           </ul>
         </div>
@@ -78,3 +76,46 @@ function Search({ currency, setCurrency }) {
 }
 
 export default Search;
+
+function SearchResult({ coin, setChart }) {
+  const showHandler = async () => {
+    try {
+      // دو درخواست هم‌زمان: یکی برای داده‌های نمودار، یکی برای اطلاعات بازار
+      const [chartRes, coinRes] = await Promise.all([
+        fetch(marketChart(coin.id)),
+        fetch(getCoinDetail(coin.id)),
+      ]);
+
+      const [chartData, coinData] = await Promise.all([
+        chartRes.json(),
+        coinRes.json(),
+      ]);
+
+      console.log(coinData);
+
+      // از market_data داده‌های قیمت، ATH و مارکت کپ گرفته میشه
+      const market = coinData.market_data;
+      const fullCoin = {
+        id: coin.id,
+        name: coinData.name,
+        image: coinData.image.small,
+        current_price: market.current_price.usd,
+        ath: market.ath.usd,
+        market_cap: market.market_cap.usd,
+      };
+
+      // حالا هر دو داده رو باهم می‌فرستیم به setChart
+      setChart({ ...chartData, coin: fullCoin });
+    } catch (error) {
+      console.log(error);
+      setChart(null);
+    }
+  };
+
+  return (
+    <li key={coin.id} onClick={showHandler}>
+      <img src={coin.thumb} alt={coin.name} />
+      <p>{coin.name}</p>
+    </li>
+  );
+}
